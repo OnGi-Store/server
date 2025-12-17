@@ -1,0 +1,486 @@
+openapi: 3.1.0
+
+servers:
+  - url: /
+    description: 착한 가격 업소 - 온기
+
+paths:
+  /api/v1/users:
+    post:
+      tags:
+        - User
+      operationId: findOrCreateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRequestDTO"
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/UserResponseDTO"
+
+  /api/v1/users/{userId}/favorites/{storeId}:
+    get:
+      tags:
+        - User
+      operationId: getStoreLike
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/LikeInfoResponseDTO"
+
+    post:
+      tags:
+        - User
+      operationId: toggleStoreLike
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/LikeInfoResponseDTO"
+
+  /api/v1/time:
+    get:
+      tags:
+        - Sync Time
+      operationId: getSyncTime
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: date-time
+
+  /api/v1/stores:
+    get:
+      tags:
+        - Store
+      operationId: getStores
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: latitude
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 37.5642135
+        - name: longitude
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 127.0016985
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 10
+        - name: sortType
+          in: query
+          schema:
+            type: string
+            default: FAVORITE
+            enum:
+              - NAME
+              - FAVORITE
+              - DISTANCE
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum:
+              - KOREAN_FOOD
+              - WESTERN_FOOD
+              - JAPANESE_FOOD
+              - CHINESE_FOOD
+              - BAKERY
+              - RESTAURANT
+              - BATH_HOUSE
+              - LAUNDRY
+              - HOTEL
+              - HAIR_SALON
+              - ETC
+        - name: distanceRange
+          in: query
+          schema:
+            type: string
+            enum:
+              - M_5
+              - K_1
+              - K_3
+              - K_5
+              - K_10
+              - K_15
+              - K_20
+              - K_30
+              - K_40
+              - K_50
+              - K_60
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: onlyFavorites
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/StorePageDTO"
+
+  /api/v1/stores/{storeId}:
+    get:
+      tags:
+        - Store
+      operationId: getStore
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: latitude
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 37.5642135
+        - name: longitude
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 127.0016985
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/StoreDTO"
+
+  /api/v1/stores/{storeId}/menus:
+    get:
+      tags:
+        - Store
+      operationId: getStoreMenus
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MenuDTO"
+
+  /api/v1/stores/{storeId}/detail:
+    get:
+      tags:
+        - Store
+      operationId: getStoreDetail
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/StoreDetailDTO"
+
+  /api/v1/stores/count:
+    get:
+      tags:
+        - Store
+      operationId: countStores
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: integer
+                format: int64
+
+  /api/v1/banners:
+    get:
+      tags:
+        - Banner
+      operationId: getBanners
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BannerDTO"
+
+  /api/v1/users/{userId}:
+    delete:
+      tags:
+        - User
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: boolean
+
+components:
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    UserRequestDTO:
+      type: object
+      properties:
+        address:
+          type: string
+      required:
+        - address
+
+    UserResponseDTO:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        address:
+          type: string
+      required:
+        - id
+        - address
+
+    LikeInfoResponseDTO:
+      type: object
+      properties:
+        isLike:
+          type: boolean
+      required:
+        - isLike
+
+    StoreDTO:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        name:
+          type: string
+        address:
+          type: string
+        favoriteCount:
+          type: integer
+          format: int32
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        category:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        district:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        distance:
+          type: number
+          format: double
+      required:
+        - id
+        - name
+        - address
+        - favoriteCount
+        - latitude
+        - longitude
+        - distance
+
+    StorePageDTO:
+      type: object
+      properties:
+        stores:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoreDTO"
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+      required:
+        - stores
+        - hasNext
+        - hasPrev
+
+    MenuDTO:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Uuid"
+        storeId:
+          $ref: "#/components/schemas/Uuid"
+        name:
+          type: string
+        price:
+          type: string
+      required:
+        - id
+        - storeId
+        - name
+        - price
+
+    StoreDetailDTO:
+      type: object
+      properties:
+        storeId:
+          $ref: "#/components/schemas/Uuid"
+        hasParking:
+          type: boolean
+        hasTakeout:
+          type: boolean
+        hasDelivery:
+          type: boolean
+        hasReservation:
+          type: boolean
+        hasDividedRestroom:
+          type: boolean
+        allowsPets:
+          type: boolean
+        hasWifi:
+          type: boolean
+        hasKidsFacility:
+          type: boolean
+        allowsGroup:
+          type: boolean
+      required:
+        - storeId
+        - hasParking
+        - hasTakeout
+        - hasDelivery
+        - hasReservation
+        - hasDividedRestroom
+        - allowsPets
+        - hasWifi
+        - hasKidsFacility
+        - allowsGroup
+
+    BannerDTO:
+      type: object
+      properties:
+        url:
+          type: string
+        imageUrl:
+          type: string
+      required:
+        - url
+        - imageUrl
+
+    ErrorDTO:
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - error
+        - message
+        - path
+        - timestamp

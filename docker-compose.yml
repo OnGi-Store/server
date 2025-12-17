@@ -1,0 +1,63 @@
+services:
+  # 애플리케이션 서비스 설정
+  app:
+    image: csjune99/ongi:latest
+    container_name: ongi-app
+    environment:
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ongi
+      GOOD_PRICE_API_BASE_URL: ${GOOD_PRICE_API_BASE_URL}
+      GOOD_PRICE_API_PATH: ${GOOD_PRICE_API_PATH}
+      GOOD_CLOUD_API_BASE_URL: ${GOOD_CLOUD_API_BASE_URL}
+      GOOD_CLOUD_API_VERSION: ${GOOD_CLOUD_API_VERSION}
+      GOOD_CLOUD_API_KEY: ${GOOD_CLOUD_API_KEY}
+      GEOCODER_API_URL: ${GEOCODER_API_URL}
+      GEOCODER_API_KEY: ${GEOCODER_API_KEY}
+      JUSO_API_BASE_URL: ${JUSO_API_BASE_URL}
+      JUSO_API_KEY: ${JUSO_API_KEY}
+    depends_on:
+      - db
+    networks:
+      - ongi-network
+    command: [ "/bin/bash", "-c", "until nc -z -v -w30 db 3306; do echo 'Waiting for MariaDB to be ready...'; sleep 3; done; exec java -jar /app/app.jar" ]
+    restart: on-failure  # 실패 시 자동 재시작
+
+  # MariaDB 서비스 설정
+  db:
+    image: mariadb:latest
+    container_name: ongi-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ongi
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - ongi-network
+
+  # nginx 서비스 설정
+  nginx:
+    image: nginx:latest
+    container_name: ongi-nginx
+    ports:
+      - "80:80"    # HTTP 포트
+      - "443:443"  # HTTPS 포트
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /etc/letsencrypt:/etc/letsencrypt  # 인증서 경로 마운트
+    depends_on:
+      - app
+    networks:
+      - ongi-network
+
+networks:
+  ongi-network:
+    driver: bridge  # 같은 compose 내 서비스들이 서로 통신 가능
+
+volumes:
+  db_data:
+    driver: local  # MariaDB 데이터 유지

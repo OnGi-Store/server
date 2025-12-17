@@ -1,0 +1,178 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+# 워크플로우 이름 설정
+name: CI/CD Pipeline
+
+# 워크플로우 트리거 설정
+on:
+  push:
+    branches: [ "main" ]  # main 브랜치에 푸시될 때 실행
+  pull_request:
+    branches: [ "main" ]  # main 브랜치로의 풀 리퀘스트에 대해 실행
+
+jobs:
+  # 빌드 작업 정의
+  build:
+    runs-on: ubuntu-latest  # GitHub Actions의 실행 환경 (ubuntu-latest)
+    permissions:
+      contents: read  # 저장소 콘텐츠에 대한 읽기 권한만 부여
+
+    # 빌드에 필요한 환경 변수 설정 (GitHub Secrets에서 가져옴)
+    env:
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      GOOD_PRICE_API_BASE_URL: ${{ secrets.GOOD_PRICE_API_BASE_URL }}
+      GOOD_PRICE_API_PATH: ${{ secrets.GOOD_PRICE_API_PATH }}
+      GOOD_CLOUD_API_BASE_URL: ${{ secrets.GOOD_CLOUD_API_BASE_URL }}
+      GOOD_CLOUD_API_VERSION: ${{ secrets.GOOD_CLOUD_API_VERSION }}
+      GOOD_CLOUD_API_KEY: ${{ secrets.GOOD_CLOUD_API_KEY }}
+      GEOCODER_API_URL: ${{ secrets.GEOCODER_API_URL }}
+      GEOCODER_API_KEY: ${{ secrets.GEOCODER_API_KEY }}
+      JUSO_API_BASE_URL: ${{ secrets.JUSO_API_BASE_URL }}
+      JUSO_API_KEY: ${{ secrets.JUSO_API_KEY }}
+
+    # 빌드 작업 단계 정의
+    steps:
+      - name: Checkout source code  # 소스 코드를 워크플로우 환경으로 가져오기
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21  # Java 개발 환경 설정 (JDK 21)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'  # Adoptium의 Eclipse Temurin JDK 사용
+          cache: gradle  # Gradle 의존성 캐싱으로 빌드 속도 향상
+
+      - name: Setup Gradle  # Gradle 빌드 도구 설정
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper  # 프로젝트의 Gradle wrapper 사용
+
+      - name: Grant execute permission for gradlew  # Gradle wrapper 실행 권한 부여
+        run: chmod +x gradlew
+
+      - name: Build fat JAR  # Gradle을 사용하여 애플리케이션 빌드 (테스트 제외)
+        run: ./gradlew buildFatJar -x test
+
+      - name: Run tests  # 테스트 실행 (별도 단계로 분리하여 실패 지점 식별 용이)
+        run: ./gradlew test
+
+      - name: Upload build artifacts  # 빌드된 JAR 파일을 아티팩트로 업로드 (다음 작업에서 사용)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts  # 아티팩트 이름
+          path: build/libs/*.jar  # 업로드할 파일 경로 (JAR 파일)
+          retention-days: 1  # 아티팩트 보존 기간 (1일)
+
+  # Docker 이미지 빌드 및 푸시 작업 정의
+  docker-build-push:
+    needs: build  # build 작업이 성공적으로 완료된 후에만 실행
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # main 브랜치 푸시 이벤트일 때만 실행
+    runs-on: ubuntu-latest  # GitHub Actions의 실행 환경 (ubuntu-latest)
+
+    steps:
+      - name: Checkout source code  # 소스 코드 체크아웃 (Dockerfile 등 필요)
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts  # 이전 작업에서 생성된 빌드 아티팩트 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts  # 다운로드할 아티팩트 이름
+          path: build/libs  # 아티팩트를 저장할 로컬 경로
+
+      - name: Log in to Docker Hub  # Docker Hub 인증
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}  # Docker Hub 사용자 이름
+          password: ${{ secrets.DOCKER_HUB_PAT }}  # Docker Hub 개인 액세스 토큰
+
+      - name: Set up Docker Buildx  # 효율적인 Docker 이미지 빌드를 위한 Buildx 설정
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and Push Docker Image  # Docker 이미지 빌드 및 Docker Hub로 푸시
+        uses: docker/build-push-action@v4
+        with:
+          context: .  # 빌드 컨텍스트 (현재 디렉토리)
+          push: true  # 빌드 후 Docker Hub에 푸시
+          tags: |  # 이미지 태그 설정
+            csjune99/ongi:${{ github.sha }} 
+            csjune99/ongi:latest
+          cache-from: type=registry,ref=csjune99/ongi:buildcache  # 빌드 캐시 사용 (빌드 시간 단축)
+          cache-to: type=registry,ref=csjune99/ongi:buildcache,mode=max  # 빌드 캐시 저장
+
+  # 배포 작업 정의
+  deploy:
+    needs: docker-build-push  # docker-build-push 작업이 성공적으로 완료된 후에만 실행
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # main 브랜치 푸시 이벤트일 때만 실행
+    runs-on: ubuntu-latest  # GitHub Actions의 실행 환경 (ubuntu-latest)
+
+    # 배포에 필요한 환경 변수 설정
+    env:
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+    steps:
+      - name: Checkout source code  # 소스 코드 체크아웃 (배포 스크립트 등 필요)
+        uses: actions/checkout@v4
+
+      - name: Create .env file  # 도커 컴포즈에서 사용할 환경 변수 파일 생성
+        run: |
+          echo "DB_PORT=${{ secrets.DB_PORT }}" > .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "GOOD_PRICE_API_BASE_URL=${{ secrets.GOOD_PRICE_API_BASE_URL }}" >> .env
+          echo "GOOD_PRICE_API_PATH=${{ secrets.GOOD_PRICE_API_PATH }}" >> .env
+          echo "GOOD_CLOUD_API_BASE_URL=${{ secrets.GOOD_CLOUD_API_BASE_URL }}" >> .env
+          echo "GOOD_CLOUD_API_VERSION=${{ secrets.GOOD_CLOUD_API_VERSION }}" >> .env
+          echo "GOOD_CLOUD_API_KEY=${{ secrets.GOOD_CLOUD_API_KEY }}" >> .env
+          echo "GEOCODER_API_URL=${{ secrets.GEOCODER_API_URL }}" >> .env
+          echo "GEOCODER_API_KEY=${{ secrets.GEOCODER_API_KEY }}" >> .env
+          echo "JUSO_API_BASE_URL=${{ secrets.JUSO_API_BASE_URL }}" >> .env
+          echo "JUSO_API_KEY=${{ secrets.JUSO_API_KEY }}" >> .env
+
+      - name: Build nginx.conf from part + secrets  # nginx 설정 파일을 secrets 기반으로 생성
+        run: |
+          mkdir -p nginx
+          sed \
+            -e "s|__SERVER_NAME__|${{ secrets.SERVER_NAME }}|g" \
+            -e "s|__SSL_FULLCHAIN__|${{ secrets.SSL_FULLCHAIN }}|g" \
+            -e "s|__SSL_PRIVKEY__|${{ secrets.SSL_PRIVKEY }}|g" \
+            -e "s|__UPSTREAM__|${{ secrets.UPSTREAM }}|g" \
+            nginx/nginx.conf.part > nginx/nginx.conf
+
+      - name: Make scripts executable  # 배포 스크립트에 실행 권한 부여
+        run: |
+          chmod +x .github/scripts/deploy.sh
+          chmod +x .github/scripts/cleanup.sh
+
+      - name: Copy files to server  # 필요한 파일들을 서버로 복사
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}  # 배포 대상 서버 호스트
+          username: ${{ secrets.LIGHTSAIL_USERNAME }}  # SSH 사용자 이름
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}  # SSH 개인 키
+          source: "docker-compose.yml,.env,nginx/nginx.conf,nginx/nginx.conf.part,.github/scripts/deploy.sh,.github/scripts/cleanup.sh" # 복사할 파일
+          target: "~/ongi-app"  # 대상 서버의 경로
+          strip_components: 0  # 디렉토리 구조 유지
+          overwrite: true  # 기존 파일 덮어쓰기
+
+      - name: Execute deployment script  # 배포 스크립트 실행
+        uses: appleboy/ssh-action@master
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_HUB_PAT: ${{ secrets.DOCKER_HUB_PAT }}
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}  # 배포 대상 서버 호스트
+          username: ${{ secrets.LIGHTSAIL_USERNAME }}  # SSH 사용자 이름
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}  # SSH 개인 키
+          script: |
+            cd ~/ongi-app
+            chmod +x .github/scripts/deploy.sh
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} DOCKER_HUB_PAT=${{ secrets.DOCKER_HUB_PAT }} ./.github/scripts/deploy.sh

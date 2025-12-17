@@ -1,0 +1,81 @@
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Local / Sensitive config ###
+# 환경 변수 파일
+.env
+.env.*
+
+# Gradle / 빌드 관련 민감 설정
+gradle.properties
+
+# Spring / Ktor 등 애플리케이션 설정 (로컬/개인용 프로필)
+application-local.yml
+application-local.yaml
+application-dev.yml
+application-dev.yaml
+application-test.yml
+application-test.yaml
+application-*.yml
+application-*.yaml
+src/main/resources/application-local.yml
+src/main/resources/application-local.yaml
+src/main/resources/application-dev.yml
+src/main/resources/application-dev.yaml
+src/main/resources/application-test.yml
+src/main/resources/application-test.yaml
+
+# 로그 / 임시 파일
+logs/
+*.log
+*.tmp
+*.swp
+*.swo
+
+# 인증서 / 키스토어 / 개인 키
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer
+
+# OS / 기타 잡파일
+.DS_Store
+Thumbs.db

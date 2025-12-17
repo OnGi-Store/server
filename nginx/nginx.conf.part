@@ -1,0 +1,66 @@
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    # DDoS 방어
+    limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
+
+    # 기본 보안
+    client_max_body_size 10M;
+
+    server {
+        listen 80;
+        server_name __SERVER_NAME__;
+        return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443 ssl;
+        server_name __SERVER_NAME__;
+
+        ssl_certificate __SSL_FULLCHAIN__;
+        ssl_certificate_key __SSL_PRIVKEY__;
+
+        # 최신 보안 프로토콜만 사용
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers off;
+
+        # 보안 헤더
+        add_header Strict-Transport-Security "max-age=31536000" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+
+        # Rate limiting 적용
+        limit_req zone=general burst=50 nodelay;
+
+        location ~* /(wp-admin|wp-login\.php|xmlrpc\.php|setup-config\.php|phpmyadmin|\.env|\.git) {
+            deny all;
+        }
+
+        # PHP 우회 방지
+        location ~* \.php(/|$) {
+            deny all;
+        }
+
+        location ~* \.\./ {
+            deny all;
+        }
+
+        location / {
+            proxy_pass http://__UPSTREAM__;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # 타임아웃 (Slowloris 방어)
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
+        }
+    }
+}

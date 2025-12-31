@@ -31,6 +31,8 @@ fun Application.configureTaskScheduling() {
             concurrency = 1
             kronSchedule = {
                 hours { at(value = 18) }
+                minutes { at(value = 0) }
+                seconds { at(value = 0) }
             }
 
             task = {

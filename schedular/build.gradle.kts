@@ -14,7 +14,6 @@ dependencies {
     implementation(project(":domain"))
     implementation(libs.ktor.server.di)
     implementation(libs.ktor.task.scheduling.core)
-    implementation(libs.ktor.task.scheduling.jdbc)
     testImplementation(libs.kotlin.test.junit)
 }
 

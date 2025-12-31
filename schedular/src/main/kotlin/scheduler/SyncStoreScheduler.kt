@@ -4,7 +4,6 @@ import io.github.flaxoos.ktor.server.plugins.taskscheduling.TaskScheduling
 import io.ktor.server.application.*
 import io.ktor.server.plugins.di.*
 import kotlinx.coroutines.*
-import org.jetbrains.exposed.sql.Database
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import service.SyncStoreService
@@ -15,7 +14,6 @@ import kotlin.time.Duration.Companion.minutes
 private const val STORE_SCHEDULAR = "STORE_SCHEDULAR"
 
 fun Application.configureTaskScheduling() {
-    val storeDatabase: Database by dependencies
     val syncTimeService: SyncTimeService by dependencies
     val syncStoreService: SyncStoreService by dependencies
     val log: Logger = LoggerFactory.getLogger(javaClass)
@@ -27,19 +25,12 @@ fun Application.configureTaskScheduling() {
     }
 
     install(plugin = TaskScheduling) {
-        addTaskManager(
-            taskManagerConfiguration = DefaultJdbcJobLockManagerConfiguration(database = storeDatabase).apply {
-                name = STORE_SCHEDULAR
-            }
-        )
-
+        addTaskManager(taskManagerConfiguration = DefaultTaskManagerConfiguration().apply { name = STORE_SCHEDULAR })
         task(taskManagerName = STORE_SCHEDULAR) {
             dispatcher = Dispatchers.IO
             concurrency = 1
             kronSchedule = {
                 hours { at(value = 18) }
-                minutes { at(value = 0) }
-                seconds { at(value = 0) }
             }
 
             task = {

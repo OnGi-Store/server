@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.ktor.server.di)
     implementation(libs.exposed.core)
     implementation(libs.exposed.dao)
+    implementation(libs.exposed.jdbc)
     implementation(libs.mariadb.java.client)
     implementation(libs.kotlinx.datetime)
     implementation(libs.hikari.cp)

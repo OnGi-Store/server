@@ -1,9 +1,9 @@
 package route
 
 import Menu
-import Store
 import StoreDetail
 import StorePage
+import StoreWithDistance
 import io.ktor.http.*
 import io.ktor.server.plugins.di.*
 import io.ktor.server.response.*
@@ -148,7 +148,7 @@ private fun Route.registerGetStore(storeService: StoreService) = get(path = "") 
     val storeId: UUID = call.getId(paramName = STORE_ID)
     val lat: Double = call.getDoubleParam(name = LATITUDE, defaultValue = DEFAULT_LATITUDE)
     val lng: Double = call.getDoubleParam(name = LONGITUDE, defaultValue = DEFAULT_LONGITUDE)
-    val store: Store = storeService.getStoreById(storeId = storeId, latitude = lat, longitude = lng)
+    val store: StoreWithDistance = storeService.getStoreById(storeId = storeId, latitude = lat, longitude = lng)
     call.respond(status = HttpStatusCode.OK, message = store.toStoreDTO())
 }
 

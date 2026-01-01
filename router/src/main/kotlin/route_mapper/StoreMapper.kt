@@ -1,9 +1,9 @@
 package route_mapper
 
 import Menu
-import Store
 import StoreDetail
 import StorePage
+import StoreWithDistance
 import route_dto.MenuDTO
 import route_dto.StoreDTO
 import route_dto.StoreDetailDTO
@@ -13,18 +13,18 @@ import kotlin.uuid.toKotlinUuid
 
 @OptIn(ExperimentalUuidApi::class)
 internal object StoreMapper {
-    fun Store.toStoreDTO() = StoreDTO(
-        id = id.toKotlinUuid(),
-        name = name,
-        address = address,
-        favoriteCount = favoriteCount,
-        latitude = latitude,
-        longitude = longitude,
-        category = category,
-        phone = phone,
-        city = city,
-        district = district,
-        imageUrl = imageUrl,
+    fun StoreWithDistance.toStoreDTO() = StoreDTO(
+        id = store.id.toKotlinUuid(),
+        name = store.name,
+        address = store.address,
+        favoriteCount = store.favoriteCount,
+        latitude = store.latitude,
+        longitude = store.longitude,
+        category = store.category,
+        phone = store.phone,
+        city = store.city,
+        district = store.district,
+        imageUrl = store.imageUrl,
         distance = distance,
     )
 

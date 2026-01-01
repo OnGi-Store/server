@@ -2,6 +2,7 @@ package repository.local
 
 import Store
 import StorePage
+import StoreWithDistance
 import query.StoreQuerySortType
 import java.util.*
 
@@ -13,7 +14,7 @@ interface StoreRepository {
     suspend fun decrementFavoriteCount(id: UUID)
     suspend fun findById(id: UUID): Store?
     suspend fun findByNameAndAddress(name: String, address: String): Store?
-    suspend fun findStoreByIdWithDistance(id: UUID, latitude: Double, longitude: Double): Store?
+    suspend fun findStoreByIdWithDistance(id: UUID, latitude: Double, longitude: Double): StoreWithDistance?
     suspend fun findStores(
         userId: UUID,
         latitude: Double,

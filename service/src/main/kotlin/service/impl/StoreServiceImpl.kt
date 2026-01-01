@@ -1,9 +1,9 @@
 package service.impl
 
 import Menu
-import Store
 import StoreDetail
 import StorePage
+import StoreWithDistance
 import query.StoreQueryCategory
 import query.StoreQueryDistance
 import query.StoreQuerySortType
@@ -47,7 +47,7 @@ internal class StoreServiceImpl(
         storeId: UUID,
         latitude: Double,
         longitude: Double
-    ): Store = storeRepository.findStoreByIdWithDistance(
+    ): StoreWithDistance = storeRepository.findStoreByIdWithDistance(
         id = storeId,
         latitude = latitude,
         longitude = longitude

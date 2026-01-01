@@ -21,7 +21,6 @@ internal object StoreMapper {
         city = city,
         district = district,
         imageUrl = imageUrl,
-        distance = Double.NaN
     )
 
     fun RemoteStore.toStoreDetail(storeId: UUID) = StoreDetail(

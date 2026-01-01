@@ -3,13 +3,30 @@ package local_mapper
 import Menu
 import Store
 import StoreDetail
+import StoreWithDistance
 import local_dao.MenuEntity
 import local_dao.StoreDetailEntity
 import local_dao.StoreEntity
 
 internal object StoreMapper {
+    fun StoreEntity.toStoreWithDistance(distance: Double): StoreWithDistance {
+        val store = Store(
+            id = id.value,
+            name = name,
+            address = address,
+            favoriteCount = favoriteCount,
+            latitude = latitude,
+            longitude = longitude,
+            category = category,
+            phone = phone,
+            city = city,
+            district = district,
+            imageUrl = imageUrl,
+        )
+        return StoreWithDistance(store = store, distance = distance)
+    }
 
-    fun StoreEntity.toStore(distance: Double) = Store(
+    fun StoreEntity.toStore() = Store(
         id = id.value,
         name = name,
         address = address,
@@ -21,7 +38,6 @@ internal object StoreMapper {
         city = city,
         district = district,
         imageUrl = imageUrl,
-        distance = distance
     )
 
     fun StoreDetailEntity.toDetail() = StoreDetail(

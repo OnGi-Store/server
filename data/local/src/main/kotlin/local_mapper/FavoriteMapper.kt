@@ -7,10 +7,10 @@ import local_mapper.UserMapper.toUser
 
 internal object FavoriteMapper {
 
-    fun FavoriteEntity.toFavorite(distance: Double = Double.NaN) = Favorite(
+    fun FavoriteEntity.toFavorite() = Favorite(
         id = id.value,
         user = user.toUser(),
-        store = store.toStore(distance = distance)
+        store = store.toStore()
     )
 
     fun List<FavoriteEntity>.toFavorite() = map { it.toFavorite() }

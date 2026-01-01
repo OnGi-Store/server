@@ -1,4 +1,4 @@
-import java.util.UUID
+import java.util.*
 
 data class Store(
     val id: UUID,
@@ -12,5 +12,4 @@ data class Store(
     val city: String,
     val district: String?,
     val imageUrl: String?,
-    val distance: Double
 )

@@ -2,18 +2,20 @@ package local_repository.impl
 
 import Store
 import StorePage
+import StoreWithDistance
 import local_dao.StoreEntity
 import local_mapper.StoreMapper.toStore
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.statements.UpdateStatement
-import query.StoreQuerySortType
-import repository.local.StoreRepository
+import local_mapper.StoreMapper.toStoreWithDistance
 import local_repository.util.DoubleExpression
 import local_repository.util.RepositoryUtil.calculateDistance
 import local_repository.util.RepositoryUtil.dbQuery
 import local_repository.util.SortUtil.toSortPair
 import local_table.FavoriteTable
 import local_table.StoreTable
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.statements.UpdateStatement
+import query.StoreQuerySortType
+import repository.local.StoreRepository
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -24,7 +26,7 @@ internal class StoreRepositoryImpl : StoreRepository {
     override suspend fun create(store: Store): Store = dbQuery {
         StoreEntity.new {
             applyStore(store = store)
-        }.toStore(distance = Double.NaN)
+        }.toStore()
     }
 
     override suspend fun update(store: Store): Store = dbQuery {
@@ -34,7 +36,7 @@ internal class StoreRepositoryImpl : StoreRepository {
 
         entity
             .applyStore(store = store)
-            .toStore(distance = Double.NaN)
+            .toStore()
     }
 
     override suspend fun count(): Long = dbQuery {
@@ -60,7 +62,7 @@ internal class StoreRepositoryImpl : StoreRepository {
     override suspend fun findById(id: UUID): Store? = dbQuery {
         StoreEntity
             .findById(id = id)
-            ?.toStore(distance = Double.NaN)
+            ?.toStore()
     }
 
     override suspend fun findByNameAndAddress(
@@ -70,14 +72,14 @@ internal class StoreRepositoryImpl : StoreRepository {
         StoreEntity
             .find { (StoreTable.name eq name) and (StoreTable.address eq address) }
             .firstOrNull()
-            ?.toStore(distance = Double.NaN)
+            ?.toStore()
     }
 
     override suspend fun findStoreByIdWithDistance(
         id: UUID,
         latitude: Double,
         longitude: Double
-    ): Store? = dbQuery {
+    ): StoreWithDistance? = dbQuery {
         StoreEntity.findById(id = id)?.let { entity: StoreEntity ->
             val distance: Double = calculateDistance(
                 lat1 = latitude,
@@ -86,7 +88,7 @@ internal class StoreRepositoryImpl : StoreRepository {
                 lon2 = entity.longitude
             )
 
-            entity.toStore(distance = distance)
+            entity.toStoreWithDistance(distance = distance)
         }
     }
 
@@ -154,8 +156,8 @@ internal class StoreRepositoryImpl : StoreRepository {
         }
 
         // 결과 매핑
-        val rows = query.map { row: ResultRow ->
-            Store(
+        val rows: List<StoreWithDistance> = query.map { row: ResultRow ->
+            val store = Store(
                 id = row[StoreTable.id].value,
                 name = row[StoreTable.name],
                 address = row[StoreTable.address],
@@ -167,12 +169,13 @@ internal class StoreRepositoryImpl : StoreRepository {
                 city = row[StoreTable.city],
                 district = row[StoreTable.district],
                 imageUrl = row[StoreTable.imageUrl],
-                distance = row[distanceExpr]
             )
+            val distance: Double = row[distanceExpr]
+            StoreWithDistance(store = store, distance = distance)
         }
 
         val hasNext: Boolean = rows.size > size
-        val stores: List<Store> = if (hasNext) rows.dropLast(n = 1) else rows
+        val stores: List<StoreWithDistance> = if (hasNext) rows.dropLast(n = 1) else rows
         val hasPrev: Boolean = page > 1
 
         StorePage(

@@ -1,5 +1,5 @@
 data class StorePage(
-    val stores: List<Store>,
+    val stores: List<StoreWithDistance>,
     val hasNext: Boolean,
     val hasPrev: Boolean
 )

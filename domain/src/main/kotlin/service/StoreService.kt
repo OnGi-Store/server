@@ -1,9 +1,9 @@
 package service
 
 import Menu
-import Store
 import StoreDetail
 import StorePage
+import StoreWithDistance
 import query.StoreQueryCategory
 import query.StoreQueryDistance
 import query.StoreQuerySortType
@@ -24,7 +24,7 @@ interface StoreService {
         onlyFavorites: Boolean,
     ): StorePage
 
-    suspend fun getStoreById(storeId: UUID, latitude: Double, longitude: Double): Store
+    suspend fun getStoreById(storeId: UUID, latitude: Double, longitude: Double): StoreWithDistance
 
     suspend fun getStoreDetail(storeId: UUID): StoreDetail
 

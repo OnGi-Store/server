@@ -19,6 +19,7 @@ dependencies {
     implementation(libs.mariadb.java.client)
     implementation(libs.kotlinx.datetime)
     implementation(libs.hikari.cp)
+    implementation(libs.geohash)
     testImplementation(libs.kotlin.test.junit)
 }
 

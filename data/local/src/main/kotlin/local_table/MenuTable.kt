@@ -19,6 +19,7 @@ private const val UPDATED_AT = "updatedAt"
 @OptIn(ExperimentalTime::class)
 internal object MenuTable : IdTable<UUID>(name = MENU_TABLE) {
     override val id: Column<EntityID<UUID>> = uuidPrimaryKey()
+    override val primaryKey = PrimaryKey(columns = arrayOf(id))
     val storeId: Column<EntityID<UUID>> = reference(name = STORE_ID, foreign = StoreTable)
     val name: Column<String> = varchar(name = NAME, length = 255)
     val price: Column<String> = varchar(name = PRICE, length = 255)

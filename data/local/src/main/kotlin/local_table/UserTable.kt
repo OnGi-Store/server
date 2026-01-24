@@ -17,6 +17,7 @@ private const val ADDRESS = "address"
 @OptIn(ExperimentalTime::class)
 internal object UserTable : IdTable<UUID>(name = USER_TABLE) {
     override val id: Column<EntityID<UUID>> = uuidPrimaryKey()
+    override val primaryKey = PrimaryKey(columns = arrayOf(id))
     val createdAt: Column<Instant> = timestamp(name = CREATED_AT).clientDefault { Clock.System.now() }
     val address: Column<String> = varchar(name = ADDRESS, length = 255)
 }

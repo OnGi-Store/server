@@ -16,5 +16,6 @@ private const val TIME = "time"
 @OptIn(ExperimentalTime::class)
 internal object SyncTimeTable : IdTable<UUID>(SYNC_TIME_TABLE) {
     override val id: Column<EntityID<UUID>> = uuidPrimaryKey()
+    override val primaryKey = PrimaryKey(columns = arrayOf(id))
     val time: Column<Instant> = timestamp(TIME).clientDefault { Clock.System.now() }
 }

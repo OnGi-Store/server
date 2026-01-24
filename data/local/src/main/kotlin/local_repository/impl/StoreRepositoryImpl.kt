@@ -7,6 +7,7 @@ import local_dao.StoreEntity
 import local_mapper.StoreMapper.toStore
 import local_mapper.StoreMapper.toStoreWithDistance
 import local_repository.util.DoubleExpression
+import local_repository.util.LocationUtil
 import local_repository.util.RepositoryUtil.calculateDistance
 import local_repository.util.RepositoryUtil.dbQuery
 import local_repository.util.SortUtil.toSortPair
@@ -107,7 +108,14 @@ internal class StoreRepositoryImpl : StoreRepository {
         val offset: Long = (page - 1) * size.toLong()
         val limit: Int = size + 1
 
-        // 거리 계산
+        // Geohash 기반 필터링
+        val geohashPrefixes = LocationUtil.encodeWithNeighbors(
+            distanceKm = distanceRange ?: Double.MAX_VALUE,
+            latitude = latitude,
+            longitude = longitude,
+        )
+
+        // 거리 계산 (정확한 거리 계산 및 정렬용)
         val distanceSQL =
             "(6371 * acos(cos(radians($latitude)) * cos(radians(${StoreTable.latitude.name})) * " +
                     "cos(radians(${StoreTable.longitude.name}) - radians($longitude)) + " +
@@ -144,6 +152,14 @@ internal class StoreRepositoryImpl : StoreRepository {
         )
 
         val query: Query = baseTable.select(columns = columns).apply {
+            // Geohash prefix 조건 (9개 셀 중 하나라도 매칭)
+            andWhere {
+                // prefixes가 비어있지 않을 때만 조건 생성
+                geohashPrefixes
+                    .map { (StoreTable.geohash like "$it%") as Op<Boolean> }
+                    .reduce { acc, op -> acc or op }
+            }
+
             if (!category.isNullOrBlank()) andWhere { StoreTable.category eq category }
             if (!keyword.isNullOrBlank()) andWhere { StoreTable.name like "%$keyword%" }
             if (onlyFavorites) andWhere { FavoriteTable.userId eq userId }
@@ -196,6 +212,7 @@ internal class StoreRepositoryImpl : StoreRepository {
         city = store.city
         district = store.district
         imageUrl = store.imageUrl
+        geoHash = LocationUtil.encodeForStorage(latitude = latitude, longitude = longitude)
         updatedAt = Clock.System.now()
         return this
     }

@@ -23,4 +23,5 @@ internal class StoreEntity(id: EntityID<UUID>) : UUIDEntity(id = id) {
     var city: String by StoreTable.city
     var district: String? by StoreTable.district
     var imageUrl: String? by StoreTable.imageUrl
+    var geoHash: String by StoreTable.geohash
 }

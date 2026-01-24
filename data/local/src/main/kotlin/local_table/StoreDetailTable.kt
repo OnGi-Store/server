@@ -19,6 +19,7 @@ private const val ALLOWS_GROUP = "allowsGroup"
 
 internal object StoreDetailTable : IdTable<UUID>(name = STORE_DETAIL_TABLE) {
     override val id: Column<EntityID<UUID>> = reference(name = STORE_ID, foreign = StoreTable)
+    override val primaryKey = PrimaryKey(columns = arrayOf(id))
     val hasParking: Column<Boolean> = bool(name = HAS_PARKING).default(defaultValue = false)
     val hasTakeout: Column<Boolean> = bool(name = HAS_TAKEOUT).default(defaultValue = false)
     val hasDelivery: Column<Boolean> = bool(name = HAS_DELIVERY).default(defaultValue = false)
